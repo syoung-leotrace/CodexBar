@@ -176,3 +176,26 @@ In each provider’s settings, **Visible usage items** selects which reported qu
 Usage-row visibility also filters compact account constraint details. Overall account headroom, severity, ordering, and recommendations continue to use all quotas.
 
 Visibility and accent-color changes preserve account cache identity and retained spend, including when the changes arrive through config reload or sync. Credential and endpoint changes still invalidate their previous usage ownership.
+
+### Personal fork: weekly labels and Codex attention
+
+Menu Bar settings include **Hide weekly label**, which removes the prefix from the weekly
+percentage without changing its quota window or accessibility label, and **Highlight Codex
+input requests**, which makes the Codex icon and text red while a local desktop task reports
+`waitingOnApproval` or `waitingOnUserInput`. Both settings are opt-in.
+The indicator returns to its normal appearance when all requests clear. Hovering the Codex
+item reports when the attention connection is unavailable. These controls apply to Icon & percent layouts.
+
+The attention reader subscribes to the running desktop app's local IPC socket. It reads
+unarchived task IDs from the local state database, never starts or resumes a task, never
+answers requests, and never writes transcripts or sends them over the network. Initial IPC
+snapshots contain task history; transcript fields are discarded before object decoding.
+Subsequent runtime-status replacement patches are consumed directly. Idle tasks are
+unsubscribed so the monitor does not keep their histories loaded; changed task metadata
+is rediscovered every five seconds. Disconnecting or
+disabling the setting clears retained status. Only task IDs, modification times, and waiting-owner IDs are retained.
+
+This is an experimental desktop integration with IPC stream version 11 and `state_5.sqlite`,
+verified against the installed desktop app. It does not monitor independent CLI processes,
+remote hosts, or infer questions from assistant prose. A future desktop protocol change may
+require updating the reader. No paid Apple developer membership is needed for a local ad-hoc build.

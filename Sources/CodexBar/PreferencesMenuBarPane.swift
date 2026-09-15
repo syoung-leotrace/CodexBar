@@ -48,6 +48,18 @@ struct MenuBarPane: View {
                 }
                 .disabled(!Self.inactiveDisplayContrastAvailable(for: self.settings.menuBarIconStyle))
 
+                Toggle(isOn: self.$settings.menuBarHideWeeklyPrefix) {
+                    SettingsRowLabel("Hide weekly label", subtitle: "Keep the weekly percentage without the W prefix.")
+                }
+                .disabled(self.settings.menuBarIconStyle != .iconAndPercent)
+
+                Toggle(isOn: self.$settings.menuBarCodexAttention) {
+                    SettingsRowLabel(
+                        "Highlight Codex input requests",
+                        subtitle: "Turn Codex red when a local desktop task awaits approval or input.")
+                }
+                .disabled(self.settings.menuBarIconStyle != .iconAndPercent)
+
                 Toggle(isOn: self.$settings.menuBarColorPace) {
                     SettingsRowLabel(
                         L("Color Pace Indicator"),

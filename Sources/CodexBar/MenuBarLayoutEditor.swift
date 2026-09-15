@@ -950,7 +950,8 @@ struct MenuBarLayoutPreview: View {
                 isDebugApp: false,
                 now: minute,
                 verticalAdjustment: self.settings.menuBarLayoutVerticalAdjustment,
-                colorPace: self.settings.menuBarColorPace))
+                colorPace: self.settings.menuBarColorPace,
+                hideWeeklyPrefix: self.settings.menuBarHideWeeklyPrefix))
         MenuBarLayoutPreviewText(rendered: rendered)
     }
 

@@ -15,6 +15,43 @@ struct MenuBarLayoutRendererTests {
     let now = Date(timeIntervalSince1970: 1_752_768_000)
 
     @Test
+    func `hidden weekly prefix preserves weekly value and accessibility`() {
+        let renderer = MenuBarLayoutRenderer()
+        let layout = MenuBarLayout(lines: [[.percent(window: .weekly)]])
+        let visible = renderer.render(layout: layout, data: self.data(), icon: nil, options: self.options())
+        let hidden = renderer.render(
+            layout: layout,
+            data: self.data(),
+            icon: nil,
+            options: self.options(hideWeeklyPrefix: true))
+        #expect(visible.attributedTitle.string == "W 60%")
+        #expect(hidden.attributedTitle.string == "60%")
+        #expect(hidden.accessibilityLabel == visible.accessibilityLabel)
+    }
+
+    @Test
+    func `attention overrides pace and stale colors then clears from cache`() {
+        let renderer = MenuBarLayoutRenderer()
+        let layout = MenuBarLayout(lines: [[.percent(window: .weekly), .pace(window: .weekly)]])
+        let normal = renderer.render(layout: layout, data: self.data(), icon: nil, options: self.options())
+        let waiting = renderer.render(
+            layout: layout,
+            data: self.data(),
+            icon: nil,
+            options: self.options(isStale: true, colorPace: true, needsAttention: true))
+        #expect(waiting.statusImage == nil)
+        #expect(waiting.accessibilityLabel.contains("needs your input"))
+        waiting.attributedTitle.enumerateAttribute(
+            .foregroundColor, in: NSRange(location: 0, length: waiting.attributedTitle.length))
+        { value, _, _ in
+            #expect(value as? NSColor == .systemRed)
+        }
+        let cleared = renderer.render(layout: layout, data: self.data(), icon: nil, options: self.options())
+        #expect(cleared.attributedTitle == normal.attributedTitle)
+        #expect(!cleared.accessibilityLabel.contains("needs your input"))
+    }
+
+    @Test
     func `renderer composes every token with live values`() {
         let renderer = MenuBarLayoutRenderer()
         let icon = NSImage(size: NSSize(width: 16, height: 16))
@@ -76,6 +113,12 @@ struct MenuBarLayoutRendererTests {
 
         #expect(output.attributedTitle.string == "M 60%")
         #expect(output.accessibilityLabel == L("%@ %@", L("Monthly"), "60%"))
+        let hiddenWeekly = renderer.render(
+            layout: MenuBarLayout(lines: [[.percent(window: .weekly)]]),
+            data: self.data(provider: .notion),
+            icon: nil,
+            options: self.options(hideWeeklyPrefix: true))
+        #expect(hiddenWeekly.attributedTitle.string == "M 60%")
     }
 
     @Test
@@ -1697,6 +1740,8 @@ struct MenuBarLayoutRendererTests {
         conditionals: [MenuBarLayoutConditional] = [],
         isDebugApp: Bool = false,
         colorPace: Bool = false,
+        hideWeeklyPrefix: Bool = false,
+        needsAttention: Bool = false,
         highContrast: Bool = false,
         appearanceName: String = "aqua") -> MenuBarLayoutRenderOptions
     {
@@ -1710,7 +1755,9 @@ struct MenuBarLayoutRendererTests {
             isStale: isStale,
             now: now ?? self.now,
             verticalAdjustment: verticalAdjustment,
-            colorPace: colorPace)
+            colorPace: colorPace,
+            hideWeeklyPrefix: hideWeeklyPrefix,
+            needsAttention: needsAttention)
     }
 
     private func averageBrightness(

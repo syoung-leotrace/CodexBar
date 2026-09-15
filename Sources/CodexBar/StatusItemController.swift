@@ -130,6 +130,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         }
     }
 
+    let codexAttention = CodexAttentionMonitor()
     let agentSessions: AgentSessionsStore
     lazy var menuCardRefreshMonitor = self.makeMenuCardRefreshMonitor()
 
@@ -449,6 +450,8 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.lastWidgetDisplaySettingsSignature = self.widgetDisplaySettingsSignature()
         self.wireBindings()
         self.wireAgentSessionUpdates()
+        self.codexAttention.onChange = { [weak self] in self?.updateIcons() }
+        self.codexAttention.setEnabled(self.settings.menuBarCodexAttention && !SettingsStore.isRunningTests)
         if !SettingsStore.isRunningTests {
             self.agentSessions.start()
         }
@@ -625,18 +628,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.startQuotaWarningFlash(provider: event.provider, postedAt: event.postedAt)
     }
 
-    private func observeUpdaterChanges() {
-        withObservationTracking {
-            _ = self.updater.updateStatus.isUpdateReady
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.observeUpdaterChanges()
-                self.invalidateMenus()
-            }
-        }
-    }
-
     private func observeManagedCodexCoordinatorChanges() {
         withObservationTracking {
             _ = self.managedCodexAccountCoordinator.isAuthenticatingManagedAccount
@@ -691,6 +682,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         #if DEBUG
         guard !self.isReleasedForTesting else { return }
         #endif
+        self.codexAttention.setEnabled(self.settings.menuBarCodexAttention && !SettingsStore.isRunningTests)
         self.synchronizeAgentSessionsForSettingsChange()
         let configChanged = self.settings.configRevision != self.lastConfigRevision
         let orderChanged = self.settings.providerOrder != self.lastProviderOrder
@@ -1029,5 +1021,19 @@ extension StatusItemController {
         }
         self.updateVisibility()
         self.updateIcons()
+    }
+}
+
+extension StatusItemController {
+    private func observeUpdaterChanges() {
+        withObservationTracking {
+            _ = self.updater.updateStatus.isUpdateReady
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.observeUpdaterChanges()
+                self.invalidateMenus()
+            }
+        }
     }
 }

@@ -325,6 +325,22 @@ extension SettingsStore {
         }
     }
 
+    var menuBarHideWeeklyPrefix: Bool {
+        get { self.defaultsState.menuBarHideWeeklyPrefix }
+        set {
+            self.defaultsState.menuBarHideWeeklyPrefix = newValue
+            self.userDefaults.set(newValue, forKey: "menuBarHideWeeklyPrefix")
+        }
+    }
+
+    var menuBarCodexAttention: Bool {
+        get { self.defaultsState.menuBarCodexAttention }
+        set {
+            self.defaultsState.menuBarCodexAttention = newValue
+            self.userDefaults.set(newValue, forKey: "menuBarCodexAttention")
+        }
+    }
+
     var menuBarColorPace: Bool {
         get { self.defaultsState.menuBarColorPace }
         set {

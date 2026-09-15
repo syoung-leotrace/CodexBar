@@ -22,6 +22,7 @@ extension StatusItemController {
     }
 
     private func cancelShutdownTasks() {
+        self.codexAttention.setEnabled(false)
         self.agentSessions.stop()
         self.menuAppearanceObserver?.stop()
         self.menuAppearanceObserver = nil

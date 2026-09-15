@@ -67,7 +67,9 @@ extension StatusItemController {
             isStale: self.store.isStale(provider: provider),
             now: now,
             verticalAdjustment: self.settings.menuBarLayoutVerticalAdjustment,
-            colorPace: self.settings.menuBarColorPace)
+            colorPace: self.settings.menuBarColorPace,
+            hideWeeklyPrefix: self.settings.menuBarHideWeeklyPrefix,
+            needsAttention: provider == .codex && self.codexAttention.needsAttention)
         let rendered = self.menuBarLayoutRenderer.render(
             layout: resolution.layout,
             data: data,
@@ -85,6 +87,13 @@ extension StatusItemController {
             && button.imagePosition == expectedImagePosition
             && button.attributedTitle.isEqual(to: expectedTitle)
         self.setButtonLayoutContent(rendered, for: button, statusItem: statusItem)
+        if provider == .codex, self.settings.menuBarCodexAttention {
+            button.toolTip = self.codexAttention.needsAttention ? "Codex needs your input"
+                : self.codexAttention.isConnected ? "No local Codex input requests"
+                : "Codex attention unavailable. Open the desktop app."
+        } else if provider == .codex {
+            button.toolTip = nil
+        }
         return wasCached
     }
 

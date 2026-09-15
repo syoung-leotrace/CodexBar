@@ -90,6 +90,8 @@ struct MenuBarLayoutRenderData: Hashable {
 
 struct MenuBarLayoutRenderOptions: Hashable {
     let size: MenuBarLayoutSize
+    let hideWeeklyPrefix: Bool
+    let needsAttention: Bool
     let colorPace: Bool
     let highContrast: Bool
     let showUsed: Bool
@@ -116,9 +118,13 @@ struct MenuBarLayoutRenderOptions: Hashable {
         isStale: Bool = false,
         now: Date,
         verticalAdjustment: Int = 0,
-        colorPace: Bool = false)
+        colorPace: Bool = false,
+        hideWeeklyPrefix: Bool = false,
+        needsAttention: Bool = false)
     {
         self.size = size
+        self.hideWeeklyPrefix = hideWeeklyPrefix
+        self.needsAttention = needsAttention
         self.colorPace = colorPace
         self.highContrast = highContrast
         self.showUsed = showUsed
@@ -135,6 +141,8 @@ struct MenuBarLayoutRenderKey: Hashable {
     let layout: MenuBarLayout
     let data: MenuBarLayoutRenderData
     let size: MenuBarLayoutSize
+    let hideWeeklyPrefix: Bool
+    let needsAttention: Bool
     let colorPace: Bool
     let highContrast: Bool
     let showUsed: Bool
@@ -269,6 +277,8 @@ final class MenuBarLayoutRenderer {
             layout: layout,
             data: data,
             size: options.size,
+            hideWeeklyPrefix: options.hideWeeklyPrefix,
+            needsAttention: options.needsAttention,
             colorPace: options.colorPace,
             highContrast: options.highContrast,
             showUsed: options.showUsed,
@@ -325,7 +335,9 @@ final class MenuBarLayoutRenderer {
 
         let isStacked = renderedLines.count == 2
         let font = NSFont.systemFont(ofSize: Self.fontSize(size: options.size, isStacked: isStacked))
-        let foregroundColor = if options.highContrast {
+        let foregroundColor = if options.needsAttention {
+            NSColor.systemRed
+        } else if options.highContrast {
             NSColor.labelColor
         } else if options.isStale {
             NSColor.secondaryLabelColor
@@ -354,7 +366,7 @@ final class MenuBarLayoutRenderer {
         // must keep their icon inline to preserve which row owns it. High-contrast layouts also
         // keep icon + text together, while single-line layouts surface the icon for native dimming.
         // With a missing icon the token still renders its placeholder inside the title.
-        let leadingIcon: NSImage? = if options.highContrast || isStacked {
+        let leadingIcon: NSImage? = if options.highContrast || isStacked || options.needsAttention {
             nil
         } else if renderedLines.first?.first == .icon, icon != nil {
             icon.map { Self.offsetLeadingIcon($0, adjustment: options.verticalAdjustment) }
@@ -410,9 +422,10 @@ final class MenuBarLayoutRenderer {
         }.joined(separator: ", ")
         return MenuBarLayoutRenderedTitle(
             attributedTitle: result,
-            accessibilityLabel: accessibilityLabel,
+            accessibilityLabel: options.needsAttention
+                ? accessibilityLabel + ", Codex needs your input" : accessibilityLabel,
             leadingIcon: leadingIcon,
-            statusImage: !options.highContrast && !options.isStale && !isStacked
+            statusImage: !options.needsAttention && !options.highContrast && !options.isStale && !isStacked
                 && !renderedLines.joined().contains(.icon)
                 ? Self.statusImage(title: result, foregroundColor: foregroundColor)
                 : nil)
@@ -553,7 +566,10 @@ final class MenuBarLayoutRenderer {
                     attributes: style.attributes)
             }
             let attachment = NSTextAttachment()
-            attachment.image = Self.attachmentImage(icon, tint: style.foregroundColor)
+            attachment.image = Self.attachmentImage(
+                icon,
+                tint: style.foregroundColor,
+                forceTint: options.needsAttention)
             let height = style.iconHeight
             let width = icon.size.height > 0 ? icon.size.width * height / icon.size.height : height
             attachment.bounds = NSRect(
@@ -569,7 +585,9 @@ final class MenuBarLayoutRenderer {
         case let .pace(window):
             let accessibilityPrefix = item.editorLabel(provider: data.provider)
             var attributes = style.attributes
-            if options.colorPace, let delta = Self.paceDelta(window, data: data), delta.isFinite, delta != 0 {
+            if options.colorPace, !options.needsAttention, let delta = Self.paceDelta(window, data: data),
+               delta.isFinite, delta != 0
+            {
                 // Use the same rounded numeric delta as the displayed text, never its localized sign.
                 let color: NSColor = delta < 0 ? .systemGreen : .systemRed
                 attributes[.foregroundColor] = options.isStale && !options.highContrast ? color
@@ -672,7 +690,8 @@ final class MenuBarLayoutRenderer {
                 ?? Self.sessionPrefix(rateWindow)
         case .weekly:
             let secondaryLabel = Self.secondaryLabel(data: data)
-            prefix = secondaryLabel.flatMap(\.first).map { String($0).uppercased() } ?? "W"
+            prefix = options.hideWeeklyPrefix && (secondaryLabel == nil || secondaryLabel == L("Weekly")) ? ""
+                : secondaryLabel.flatMap(\.first).map { String($0).uppercased() } ?? "W"
         case .scopedWeekly:
             prefix = data.scopedWeeklyTitle.map { String($0.prefix(1)).uppercased() } ?? "F"
         case .automatic:
@@ -809,8 +828,12 @@ final class MenuBarLayoutRenderer {
         return offsetImage
     }
 
-    private static func attachmentImage(_ image: NSImage, tint: NSColor) -> NSImage {
-        guard image.isTemplate else { return image }
+    private static func attachmentImage(
+        _ image: NSImage,
+        tint: NSColor,
+        forceTint: Bool = false) -> NSImage
+    {
+        guard image.isTemplate || forceTint else { return image }
 
         // NSTextAttachment draws an NSImage directly instead of through an image cell, so AppKit does not
         // apply template tinting here. Keep a template image for status-item semantics while drawing its mask
@@ -821,7 +844,7 @@ final class MenuBarLayoutRenderer {
             rect.fill(using: .sourceAtop)
             return true
         }
-        tintedImage.isTemplate = true
+        tintedImage.isTemplate = !forceTint
         return tintedImage
     }
 
