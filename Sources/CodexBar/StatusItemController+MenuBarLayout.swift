@@ -70,7 +70,12 @@ extension StatusItemController {
             colorPace: self.settings.menuBarColorPace,
             hideWeeklyPrefix: self.settings.menuBarHideWeeklyPrefix,
             needsAttention: provider == .codex && self.codexAttention.needsAttention)
-        let rendered = self.menuBarLayoutRenderer.render(
+        let rendered = self.renderMenuBarLayoutAccounts(
+            provider: provider,
+            layout: resolution.layout,
+            icon: renderedIcon,
+            warningFlash: warningFlash,
+            options: options) ?? self.menuBarLayoutRenderer.render(
             layout: resolution.layout,
             data: data,
             icon: renderedIcon,

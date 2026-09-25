@@ -32,6 +32,7 @@ struct SettingsDefaultsState {
     var menuBarShowsBrandIconWithPercent: Bool
     var menuBarHidesCritters: Bool
     var menuBarHideWeeklyPrefix: Bool
+    var menuBarShowAllAccounts: Bool
     var menuBarCodexAttention: Bool
     var menuBarColorPace: Bool
     var menuBarHighContrastOnInactiveDisplays: Bool

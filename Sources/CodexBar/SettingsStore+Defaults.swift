@@ -333,6 +333,14 @@ extension SettingsStore {
         }
     }
 
+    var menuBarShowAllAccounts: Bool {
+        get { self.defaultsState.menuBarShowAllAccounts }
+        set {
+            self.defaultsState.menuBarShowAllAccounts = newValue
+            self.userDefaults.set(newValue, forKey: "menuBarShowAllAccounts")
+        }
+    }
+
     var menuBarCodexAttention: Bool {
         get { self.defaultsState.menuBarCodexAttention }
         set {

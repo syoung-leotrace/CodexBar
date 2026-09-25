@@ -53,6 +53,13 @@ struct MenuBarPane: View {
                 }
                 .disabled(self.settings.menuBarIconStyle != .iconAndPercent)
 
+                Toggle(isOn: self.$settings.menuBarShowAllAccounts) {
+                    SettingsRowLabel(
+                        "Show every account",
+                        subtitle: "Show each saved token account side by side, e.g. Claude work and personal.")
+                }
+                .disabled(self.settings.menuBarIconStyle != .iconAndPercent)
+
                 Toggle(isOn: self.$settings.menuBarCodexAttention) {
                     SettingsRowLabel(
                         "Highlight Codex input requests",

@@ -828,7 +828,7 @@ final class MenuBarLayoutRenderer {
         return offsetImage
     }
 
-    private static func attachmentImage(
+    static func attachmentImage(
         _ image: NSImage,
         tint: NSColor,
         forceTint: Bool = false) -> NSImage

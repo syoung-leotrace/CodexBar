@@ -31,6 +31,7 @@ extension SettingsStore {
         _ = self.menuBarShowsBrandIconWithPercent
         _ = self.menuBarHidesCritters
         _ = self.menuBarHideWeeklyPrefix
+        _ = self.menuBarShowAllAccounts
         _ = self.menuBarCodexAttention
         _ = self.menuBarColorPace
         _ = self.menuBarHighContrastOnInactiveDisplays
