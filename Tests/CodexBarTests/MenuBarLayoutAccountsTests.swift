@@ -28,9 +28,9 @@ struct MenuBarLayoutAccountsTests {
         let title = try #require(StatusItemController.accountStatusItemTitle(segments))
 
         // Assert
-        #expect(title.attributedTitle.string == "\u{00B7} \u{FFFC}\u{2009}12%")
+        #expect(title.attributedTitle.string == "\u{2009}12%")
         #expect(title.accessibilityLabel == "Personal: Weekly 12%")
-        #expect(title.leadingIcon == nil)
+        #expect(title.leadingIcon?.size.width == icon.size.width + 11)
     }
 
     @Test

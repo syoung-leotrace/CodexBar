@@ -73,15 +73,18 @@ extension StatusItemController {
             result.append(title)
         }
         let separatorAttributes = result.length > 0 ? result.attributes(at: 0, effectiveRange: nil) : [:]
-        let separator = NSAttributedString(
-            string: "\(Self.accountStatusItemSeparator) ",
-            attributes: separatorAttributes)
         if let icon = first.rendered.leadingIcon {
-            result.insert(separator, at: 0)
-            result.insert(NSAttributedString(string: "\u{2009}", attributes: separatorAttributes), at: separator.length)
-            result.insert(Self.inlineIcon(icon, attributes: separatorAttributes), at: separator.length)
+            result.insert(NSAttributedString(string: "\u{2009}", attributes: separatorAttributes), at: 0)
+            return MenuBarLayoutRenderedTitle(
+                attributedTitle: result,
+                accessibilityLabel: segments
+                    .map { "\($0.label): \($0.rendered.accessibilityLabel)" }
+                    .joined(separator: "; "),
+                leadingIcon: Self.separatorIcon(icon))
         } else {
-            result.insert(separator, at: 0)
+            result.insert(NSAttributedString(
+                string: "\(Self.accountStatusItemSeparator) ",
+                attributes: separatorAttributes), at: 0)
         }
 
         return MenuBarLayoutRenderedTitle(
@@ -90,6 +93,21 @@ extension StatusItemController {
                 .map { "\($0.label): \($0.rendered.accessibilityLabel)" }
                 .joined(separator: "; "),
             leadingIcon: nil)
+    }
+
+    private static func separatorIcon(_ icon: NSImage) -> NSImage {
+        let dotSize: CGFloat = 2.5
+        let iconX: CGFloat = 11
+        let height = max(icon.size.height, 18)
+        let image = NSImage(size: NSSize(width: iconX + icon.size.width, height: height), flipped: false) { _ in
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: NSRect(x: 2, y: (height - dotSize) / 2, width: dotSize, height: dotSize)).fill()
+            icon.draw(in: NSRect(x: iconX, y: (height - icon.size.height) / 2,
+                                 width: icon.size.width, height: icon.size.height))
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 
     private static func inlineIcon(_ icon: NSImage, attributes: [NSAttributedString.Key: Any]) -> NSAttributedString {
@@ -106,15 +124,10 @@ extension StatusItemController {
     }
 
     private func makeAccountStatusItem(for provider: UsageProvider) -> NSStatusItem {
-        let autosaveName = "codexbar-\(provider.rawValue)-accounts"
+        let autosaveName = "codexbar-\(provider.rawValue)-extra-accounts"
         let key = MenuBarStatusItemPlacementPreflight.preferredPositionKey(autosaveName: autosaveName)
-        if self.settings.userDefaults.object(forKey: key) == nil,
-           let anchor = [UsageProvider.claude, .codex]
-               .compactMap({ self.statusItems[$0.instanceID]?.button?.window?.frame })
-               .max(by: { $0.maxX < $1.maxX }),
-           let screen = NSScreen.screens.first(where: { $0.frame.intersects(anchor) })
-        {
-            self.settings.userDefaults.set(max(1, Double(screen.frame.maxX - anchor.maxX) - 1), forKey: key)
+        if self.settings.userDefaults.object(forKey: key) == nil {
+            self.settings.userDefaults.set(1, forKey: key)
         }
         let item = self.statusBar.statusItem(withLength: NSStatusItem.variableLength)
         item.autosaveName = autosaveName
