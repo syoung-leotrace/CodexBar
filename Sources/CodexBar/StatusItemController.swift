@@ -47,7 +47,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     static let quotaWarningFlashDuration: TimeInterval = 60
     private nonisolated static let statusItemAccessibilityTitle = "CodexBar"
     private nonisolated static let debugStatusItemAccessibilityTitle = "CodexBar Debug"
-    nonisolated static let statusItemAccessibilityIdentifierPrefix = "CodexBar.StatusItem"
+    private nonisolated static let statusItemAccessibilityIdentifierPrefix = "CodexBar.StatusItem"
     private nonisolated static let mergedLegacyDefaultItemIndex = 0
 
     enum StatusItemIdentity {
@@ -143,7 +143,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     let menuRefreshEnabledForController: Bool
     var statusItem: NSStatusItem
     var statusItems: [ProviderInstanceID: NSStatusItem] = [:]
-    var accountStatusItems: [ProviderInstanceID: NSStatusItem] = [:]
     /// App intent survives Tahoe changing `NSStatusItem.isVisible` after Control Center rejects its scene.
     var expectedVisibleStatusItemAutosaveNames: Set<String> = []
     var lastMenuProvider: ProviderInstanceID?
@@ -898,7 +897,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.removeMenuLifecycleState(menuID)
         }
 
-        self.removeAccountStatusItem(for: instanceID)
         guard let item = self.statusItems.removeValue(forKey: instanceID) else { return }
         item.menu = nil
         self.lastAppliedProviderIconRenderSignatures.removeValue(forKey: instanceID)

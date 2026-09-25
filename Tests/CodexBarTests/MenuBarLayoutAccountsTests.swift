@@ -19,47 +19,59 @@ struct MenuBarLayoutAccountsTests {
     }
 
     @Test
-    func `puts the dot before the personal Claude icon without account initials`() throws {
+    func `appends personal Claude after Work GPT with a dot and icon`() throws {
         // Arrange
-        let icon = NSImage(size: NSSize(width: 12, height: 12))
-        let segments = [(label: "Personal", rendered: self.rendered("12%", icon: icon))]
+        let workIcon = NSImage(size: NSSize(width: 12, height: 12))
+        let personalIcon = NSImage(size: NSSize(width: 12, height: 12))
+        let work = self.rendered("81%", icon: workIcon)
+        let personal = MenuBarLayoutAccountSegment(
+            label: "Personal",
+            rendered: self.rendered("13%", icon: personalIcon))
 
         // Act
-        let title = try #require(StatusItemController.accountStatusItemTitle(segments))
+        let title = try #require(StatusItemController.appendingMenuBarLayoutAccounts(
+            to: work,
+            segments: [personal]))
 
         // Assert
-        #expect(title.attributedTitle.string == "\u{2009}12%")
-        #expect(title.accessibilityLabel == "Personal: Weekly 12%")
-        #expect(title.leadingIcon?.size.width == icon.size.width + 11)
+        #expect(title.attributedTitle.string == "81%  ·  \u{FFFC}\u{2009}13%")
+        #expect(title.accessibilityLabel == "Weekly 81%; Personal: Weekly 13%")
+        #expect(title.leadingIcon === workIcon)
     }
 
     @Test
     func `keeps multiple extra accounts unlabeled in the title`() throws {
         // Arrange
+        let work = self.rendered("81%")
         let segments = [
-            (label: "Personal", rendered: self.rendered("12%")),
-            (label: "Second", rendered: self.rendered("34%")),
+            MenuBarLayoutAccountSegment(label: "Personal", rendered: self.rendered("13%")),
+            MenuBarLayoutAccountSegment(label: "Second", rendered: self.rendered("34%")),
         ]
 
         // Act
-        let title = try #require(StatusItemController.accountStatusItemTitle(segments))
+        let title = try #require(StatusItemController.appendingMenuBarLayoutAccounts(
+            to: work,
+            segments: segments))
 
         // Assert
-        #expect(title.attributedTitle.string == "\u{00B7} 12%  34%")
-        #expect(title.accessibilityLabel == "Personal: Weekly 12%; Second: Weekly 34%")
+        #expect(title.attributedTitle.string == "81%  ·  13%  34%")
+        #expect(title.accessibilityLabel == "Weekly 81%; Personal: Weekly 13%; Second: Weekly 34%")
     }
 
     @Test
-    func `omits the extra item for unsupported layouts`() {
+    func `omits extra accounts for unsupported layouts`() {
         // Arrange
-        let empty: [(label: String, rendered: MenuBarLayoutRenderedTitle)] = []
-        let stacked = [(label: "Personal", rendered: self.rendered("S 1%\nW 12%"))]
-        let imageOnly = [(label: "Personal", rendered: self.rendered("", statusImage: NSImage()))]
+        let work = self.rendered("81%")
+        let empty: [MenuBarLayoutAccountSegment] = []
+        let stacked = [MenuBarLayoutAccountSegment(label: "Personal", rendered: self.rendered("S 1%\nW 13%"))]
+        let imageOnly = self.rendered("", statusImage: NSImage())
 
         // Act
-        let emptyResult = StatusItemController.accountStatusItemTitle(empty)
-        let stackedResult = StatusItemController.accountStatusItemTitle(stacked)
-        let imageResult = StatusItemController.accountStatusItemTitle(imageOnly)
+        let emptyResult = StatusItemController.appendingMenuBarLayoutAccounts(to: work, segments: empty)
+        let stackedResult = StatusItemController.appendingMenuBarLayoutAccounts(to: work, segments: stacked)
+        let imageResult = StatusItemController.appendingMenuBarLayoutAccounts(
+            to: imageOnly,
+            segments: [MenuBarLayoutAccountSegment(label: "Personal", rendered: self.rendered("13%"))])
 
         // Assert
         #expect(emptyResult == nil)

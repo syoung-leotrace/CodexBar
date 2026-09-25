@@ -47,7 +47,6 @@ extension StatusItemController {
               let button = statusItem.button
         else {
             statusItem.length = NSStatusItem.variableLength
-            self.removeAccountStatusItem(for: provider.instanceID)
             return nil
         }
 
@@ -71,18 +70,50 @@ extension StatusItemController {
             colorPace: self.settings.menuBarColorPace,
             hideWeeklyPrefix: self.settings.menuBarHideWeeklyPrefix,
             needsAttention: provider == .codex && self.codexAttention.needsAttention)
-        let rendered = self.menuBarLayoutRenderer.render(
+        var rendered = self.menuBarLayoutRenderer.render(
             layout: resolution.layout,
             data: data,
             icon: renderedIcon,
             options: options)
         if statusItem !== self.statusItem {
-            self.updateAccountStatusItem(
-                provider: provider,
-                layout: resolution.layout,
-                icon: renderedIcon,
-                warningFlash: warningFlash,
-                options: options)
+            let extraProviders: [UsageProvider] = if provider == .codex, self.isEnabled(.claude) {
+                [.codex, .claude]
+            } else if provider == .claude, self.isEnabled(.codex) {
+                []
+            } else {
+                [provider]
+            }
+            let segments = extraProviders.flatMap { extraProvider -> [MenuBarLayoutAccountSegment] in
+                let extraResolution = self.settings.menuBarLayoutResolution(for: extraProvider)
+                guard !extraResolution.usesLegacyRendering else { return [] }
+                let extraWarningFlash = extraProvider == provider
+                    ? warningFlash : self.quotaWarningFlashActive(provider: extraProvider)
+                let extraIcon = extraProvider == provider
+                    ? renderedIcon
+                    : ProviderBrandIcon.image(for: extraProvider)
+                        .map { extraWarningFlash ? Self.quotaWarningFlashImage(base: $0) : $0 }
+                let extraOptions = MenuBarLayoutRenderOptions(
+                    size: options.size,
+                    highContrast: options.highContrast,
+                    showUsed: options.showUsed,
+                    conditionals: options.conditionals,
+                    appearanceName: options.appearanceName,
+                    isDebugApp: options.isDebugApp,
+                    isStale: self.store.isStale(provider: extraProvider),
+                    now: options.now,
+                    verticalAdjustment: options.verticalAdjustment,
+                    colorPace: options.colorPace,
+                    hideWeeklyPrefix: options.hideWeeklyPrefix)
+                return self.menuBarLayoutExtraAccountSegments(
+                    provider: extraProvider,
+                    layout: extraResolution.layout,
+                    icon: extraIcon,
+                    warningFlash: extraWarningFlash,
+                    options: extraOptions)
+            }
+            if let expanded = Self.appendingMenuBarLayoutAccounts(to: rendered, segments: segments) {
+                rendered = expanded
+            }
         }
         let expectedImagePosition: NSControl.ImagePosition = if rendered.statusImage != nil {
             .imageOnly
