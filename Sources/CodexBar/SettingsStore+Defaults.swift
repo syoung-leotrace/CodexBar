@@ -325,6 +325,14 @@ extension SettingsStore {
         }
     }
 
+    var menuBarShowAllAccounts: Bool {
+        get { self.defaultsState.menuBarShowAllAccounts }
+        set {
+            self.defaultsState.menuBarShowAllAccounts = newValue
+            self.userDefaults.set(newValue, forKey: "menuBarShowAllAccounts")
+        }
+    }
+
     var menuBarColorPace: Bool {
         get { self.defaultsState.menuBarColorPace }
         set {

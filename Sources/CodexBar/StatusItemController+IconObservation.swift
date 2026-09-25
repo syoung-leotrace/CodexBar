@@ -66,6 +66,12 @@ extension StatusItemController {
         let layoutConditionalWindowSignature = showBrandPercent
             ? self.storedMenuBarLayoutConditionalWindowSignature(for: provider, snapshot: snapshot)
             : nil
+        let layoutAccountsSignature = showBrandPercent
+            ? self.storedMenuBarLayoutAccountsSignature(for: provider)
+            : nil
+        let claudeAccountsSignature = showBrandPercent && provider == .codex && self.isEnabled(.claude)
+            ? self.storedMenuBarLayoutAccountsSignature(for: .claude)
+            : nil
 
         return [
             provider.rawValue,
@@ -87,6 +93,8 @@ extension StatusItemController {
             "layoutLanes=\(layoutLaneSignature ?? "nil")",
             "layoutResets=\(layoutResetSignature ?? "nil")",
             "layoutCondWindows=\(layoutConditionalWindowSignature ?? "nil")",
+            "layoutAccounts=\(layoutAccountsSignature ?? "nil")",
+            "claudeAccounts=\(claudeAccountsSignature ?? "nil")",
         ].joined(separator: "|")
     }
 

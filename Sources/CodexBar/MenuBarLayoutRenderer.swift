@@ -809,7 +809,7 @@ final class MenuBarLayoutRenderer {
         return offsetImage
     }
 
-    private static func attachmentImage(_ image: NSImage, tint: NSColor) -> NSImage {
+    static func attachmentImage(_ image: NSImage, tint: NSColor) -> NSImage {
         guard image.isTemplate else { return image }
 
         // NSTextAttachment draws an NSImage directly instead of through an image cell, so AppKit does not
