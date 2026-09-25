@@ -5,60 +5,65 @@ import Testing
 
 @MainActor
 struct MenuBarLayoutAccountsTests {
-    private func rendered(_ text: String, statusImage: NSImage? = nil) -> MenuBarLayoutRenderedTitle {
+    private func rendered(
+        _ text: String,
+        icon: NSImage? = nil,
+        statusImage: NSImage? = nil)
+        -> MenuBarLayoutRenderedTitle
+    {
         MenuBarLayoutRenderedTitle(
             attributedTitle: NSAttributedString(string: text),
             accessibilityLabel: "Weekly \(text)",
-            leadingIcon: nil,
+            leadingIcon: icon,
             statusImage: statusImage)
     }
 
     @Test
-    func `combines each account behind its initial`() throws {
+    func `puts the dot before the personal Claude icon without account initials`() throws {
         // Arrange
-        let segments = [
-            MenuBarLayoutAccountSegment(label: "Work", rendered: self.rendered("100%")),
-            MenuBarLayoutAccountSegment(label: "personal", rendered: self.rendered("12%")),
-        ]
+        let icon = NSImage(size: NSSize(width: 12, height: 12))
+        let segments = [(label: "Personal", rendered: self.rendered("12%", icon: icon))]
 
         // Act
-        let combined = try #require(StatusItemController.combinedMenuBarLayoutAccounts(segments))
+        let title = try #require(StatusItemController.accountStatusItemTitle(segments))
 
         // Assert
-        #expect(combined.attributedTitle.string == "W\u{2009}100%  P\u{2009}12%")
-        #expect(combined.accessibilityLabel == "Work: Weekly 100%; personal: Weekly 12%")
+        #expect(title.attributedTitle.string == "\u{00B7} \u{FFFC}\u{2009}12%")
+        #expect(title.accessibilityLabel == "Personal: Weekly 12%")
+        #expect(title.leadingIcon == nil)
     }
 
     @Test
-    func `places the initial after an inline icon`() throws {
+    func `keeps multiple extra accounts unlabeled in the title`() throws {
         // Arrange
         let segments = [
-            MenuBarLayoutAccountSegment(label: "Work", rendered: self.rendered("\u{FFFC}\u{2009}100%")),
-            MenuBarLayoutAccountSegment(label: "Personal", rendered: self.rendered("12%")),
+            (label: "Personal", rendered: self.rendered("12%")),
+            (label: "Second", rendered: self.rendered("34%")),
         ]
 
         // Act
-        let combined = try #require(StatusItemController.combinedMenuBarLayoutAccounts(segments))
+        let title = try #require(StatusItemController.accountStatusItemTitle(segments))
 
         // Assert
-        #expect(combined.attributedTitle.string == "\u{FFFC}\u{2009}W\u{2009}100%  P\u{2009}12%")
+        #expect(title.attributedTitle.string == "\u{00B7} 12%  34%")
+        #expect(title.accessibilityLabel == "Personal: Weekly 12%; Second: Weekly 34%")
     }
 
     @Test
-    func `falls back for a single account or stacked layouts`() {
+    func `omits the extra item for unsupported layouts`() {
         // Arrange
-        let single = [MenuBarLayoutAccountSegment(label: "Work", rendered: self.rendered("100%"))]
-        let stacked = [
-            MenuBarLayoutAccountSegment(label: "Work", rendered: self.rendered("S 1%\nW 100%")),
-            MenuBarLayoutAccountSegment(label: "Personal", rendered: self.rendered("12%")),
-        ]
+        let empty: [(label: String, rendered: MenuBarLayoutRenderedTitle)] = []
+        let stacked = [(label: "Personal", rendered: self.rendered("S 1%\nW 12%"))]
+        let imageOnly = [(label: "Personal", rendered: self.rendered("", statusImage: NSImage()))]
 
         // Act
-        let singleResult = StatusItemController.combinedMenuBarLayoutAccounts(single)
-        let stackedResult = StatusItemController.combinedMenuBarLayoutAccounts(stacked)
+        let emptyResult = StatusItemController.accountStatusItemTitle(empty)
+        let stackedResult = StatusItemController.accountStatusItemTitle(stacked)
+        let imageResult = StatusItemController.accountStatusItemTitle(imageOnly)
 
         // Assert
-        #expect(singleResult == nil)
+        #expect(emptyResult == nil)
         #expect(stackedResult == nil)
+        #expect(imageResult == nil)
     }
 }

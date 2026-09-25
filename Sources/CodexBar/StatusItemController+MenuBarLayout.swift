@@ -47,6 +47,7 @@ extension StatusItemController {
               let button = statusItem.button
         else {
             statusItem.length = NSStatusItem.variableLength
+            self.removeAccountStatusItem(for: provider.instanceID)
             return nil
         }
 
@@ -70,16 +71,19 @@ extension StatusItemController {
             colorPace: self.settings.menuBarColorPace,
             hideWeeklyPrefix: self.settings.menuBarHideWeeklyPrefix,
             needsAttention: provider == .codex && self.codexAttention.needsAttention)
-        let rendered = self.renderMenuBarLayoutAccounts(
-            provider: provider,
-            layout: resolution.layout,
-            icon: renderedIcon,
-            warningFlash: warningFlash,
-            options: options) ?? self.menuBarLayoutRenderer.render(
+        let rendered = self.menuBarLayoutRenderer.render(
             layout: resolution.layout,
             data: data,
             icon: renderedIcon,
             options: options)
+        if statusItem !== self.statusItem {
+            self.updateAccountStatusItem(
+                provider: provider,
+                layout: resolution.layout,
+                icon: renderedIcon,
+                warningFlash: warningFlash,
+                options: options)
+        }
         let expectedImagePosition: NSControl.ImagePosition = if rendered.statusImage != nil {
             .imageOnly
         } else if rendered.leadingIcon != nil {

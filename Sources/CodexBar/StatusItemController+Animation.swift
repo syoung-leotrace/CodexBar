@@ -492,6 +492,7 @@ extension StatusItemController {
         let showBrandPercent = self.settings.menuBarShowsBrandIconWithPercent
         if !showBrandPercent {
             self.statusItems[provider.instanceID]?.length = NSStatusItem.variableLength
+            self.removeAccountStatusItem(for: provider.instanceID)
         }
         let style: IconStyle = self.store.style(for: provider)
         let warningFlash = self.quotaWarningFlashActive(provider: provider)

@@ -109,6 +109,10 @@ extension StatusItemController {
             item.menu = nil
             self.statusBar.removeStatusItem(item)
         }
+        for item in self.accountStatusItems.values {
+            self.statusBar.removeStatusItem(item)
+        }
+        self.accountStatusItems.removeAll(keepingCapacity: false)
         self.statusItems.removeAll(keepingCapacity: false)
         self.lastAppliedProviderIconRenderSignatures.removeAll(keepingCapacity: false)
     }
